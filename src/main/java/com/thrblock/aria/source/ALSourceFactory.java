@@ -1,11 +1,13 @@
 package com.thrblock.aria.source;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.thrblock.aria.al.ALService;
 
 @Component
+@Lazy(true)
 public class ALSourceFactory {
 
     private static final int DEF_QUEUE_NUM = 4;

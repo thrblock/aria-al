@@ -3,11 +3,13 @@ package com.thrblock.aria.al;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.jogamp.openal.AL;
 
 @Component
+@Lazy(true)
 public class ALListener {
     /**
      * Position of the listener.

@@ -1,6 +1,5 @@
 package com.thrblock.aria.source;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -11,6 +10,10 @@ import com.jogamp.openal.AL;
 import com.thrblock.aria.al.ALService;
 import com.thrblock.aria.data.DataSource;
 
+/**
+ * OpenAL 队列控制
+ * @author zepu.li
+ */
 class ALBufferQueue {
     private static final Logger LOG = LoggerFactory.getLogger(ALBufferQueue.class);
 
@@ -84,7 +87,7 @@ class ALBufferQueue {
         try {
             while ((size = dataSource.fill(pcm)) == 0)
                 ;// skip zero for ogg spi
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOG.warn("error in fill pcm data:" + e);
         }
         if (size > 0) {

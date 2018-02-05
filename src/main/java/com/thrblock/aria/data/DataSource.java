@@ -1,18 +1,9 @@
 package com.thrblock.aria.data;
 
-import java.io.IOException;
+public interface DataSource {
+    public int getFormat();
 
-public abstract class DataSource {
-    int format;
-    int rate;
+    public int getRate();
 
-    public int getFormat() {
-        return format;
-    }
-
-    public int getRate() {
-        return rate;
-    }
-
-    public abstract int fill(byte[] dst) throws IOException;
+    public int fill(byte[] dst) throws Exception;
 }

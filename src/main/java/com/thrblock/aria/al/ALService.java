@@ -1,5 +1,6 @@
 package com.thrblock.aria.al;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -11,6 +12,7 @@ import javax.annotation.PreDestroy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.jogamp.openal.AL;
@@ -20,6 +22,7 @@ import com.jogamp.openal.ALCdevice;
 import com.jogamp.openal.ALFactory;
 
 @Component
+@Lazy(true)
 public class ALService {
     /**
      * This is the logger
@@ -39,15 +42,13 @@ public class ALService {
         ALCdevice device;
         ALCcontext context;
         String deviceSpecifier;
-        String deviceName = "DirectSound3D"; // 你可以指定一个其它的设备
-        deviceName = null; // 使用null可以获得系统默认的设备
-
+        String[] alldevice = alc.alcGetString(null, ALC.ALC_ALL_DEVICES_SPECIFIER).split("\0");
+        Arrays.stream(alldevice).forEach(dev -> LOG.info("Available OpenAL Device found:{}", dev));
         // 得到设备句柄
-        device = alc.alcOpenDevice(deviceName);
-
+        device = alc.alcOpenDevice(null);
         // 获得设备标识符
         deviceSpecifier = alc.alcGetString(device, ALC.ALC_DEVICE_SPECIFIER);
-        LOG.info("Using AL device :" + deviceSpecifier);
+        LOG.info("The device OpenAL is current using:{}", deviceSpecifier);
 
         // 创建音频上下文
         context = alc.alcCreateContext(device, null);
@@ -76,6 +77,9 @@ public class ALService {
         destroyHolders.forEach(Runnable::run);
         destroyHolders.clear();
 
+        commonsPool.shutdown();
+        commonsPool.awaitTermination(3, TimeUnit.SECONDS);
+
         // 获得当前上下文
         ALCcontext curContext = alc.alcGetCurrentContext();
         // 由上下文获得设备
@@ -88,8 +92,6 @@ public class ALService {
         alc.alcDestroyContext(curContext);
         alc.alcCloseDevice(curDevice);
 
-        commonsPool.shutdown();
-        commonsPool.awaitTermination(3, TimeUnit.SECONDS);
     }
 
     public AL getAL() {
@@ -97,13 +99,10 @@ public class ALService {
     }
 
     public void check() {
-        if (al.alGetError() != AL.AL_NO_ERROR) {
-            LOG.warn("AL Error:" + getALErrorStr());
+        int code = al.alGetError();
+        if (code != AL.AL_NO_ERROR) {
+            LOG.warn("AL Error:{}", translateALErrorCode(code));
         }
-    }
-
-    public String getALErrorStr() {
-        return translateALErrorCode(al.alGetError());
     }
 
     public String translateALErrorCode(int err) {

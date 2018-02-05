@@ -70,19 +70,36 @@ public class ALSource {
         al.alSourcefv(source[0], AL.AL_VELOCITY, sourceVel, 0);
         al.alSourcefv(source[0], AL.AL_DIRECTION, sourceOri, 0);
 
-        al.alSourcef(source[0], AL.AL_ROLLOFF_FACTOR, 0.0f);
+        al.alSourcef(source[0], AL.AL_ROLLOFF_FACTOR, 1.0f);
         al.alSourcei(source[0], AL.AL_SOURCE_RELATIVE, relative ? AL.AL_TRUE : AL.AL_FALSE);
+
         alservice.check();
+    }
+    public void setDopplerFactor(float f) {
+        al.alSourcef(source[0], AL.AL_DOPPLER_FACTOR, f);
+    }
+    
+    public void setRolloffFactor(float f) {
+        al.alSourcef(source[0], AL.AL_ROLLOFF_FACTOR, f);
+    }
+
+    public void setReferenceDistance(float refdist) {
+        al.alSourcef(source[0], AL.AL_REFERENCE_DISTANCE, refdist);
+    }
+
+    public void setMaxDistance(float maxdist) {
+        al.alSourcef(source[0], AL.AL_REFERENCE_DISTANCE, maxdist);
     }
 
     public void setPosition2D(float x, float y) {
         sourcePos[0] = x;
         sourcePos[1] = y;
+        al.alSourcefv(source[0], AL.AL_POSITION, sourcePos, 0);
     }
 
     public void setPostition3D(float x, float y, float z) {
-        setPosition2D(x, y);
         sourcePos[2] = z;
+        setPosition2D(x, y);
     }
 
     public float getPostitonX() {
@@ -100,11 +117,12 @@ public class ALSource {
     public void setVelocity2D(float x, float y) {
         sourceVel[0] = x;
         sourceVel[1] = y;
+        al.alSourcefv(source[0], AL.AL_VELOCITY, sourceVel, 0);
     }
 
     public void setVelocity3D(float x, float y, float z) {
-        setPosition2D(x, y);
         sourceVel[2] = z;
+        setPosition2D(x, y);
     }
 
     public float getVelocityX() {
@@ -123,12 +141,14 @@ public class ALSource {
         sourceOri[0] = x;
         sourceOri[1] = y;
         sourceOri[2] = z;
+        al.alSourcefv(source[0], AL.AL_ORIENTATION, sourceOri, 0);
     }
 
     public void setOrientationUp(float x, float y, float z) {
         sourceOri[3] = x;
         sourceOri[4] = y;
         sourceOri[5] = z;
+        al.alSourcefv(source[0], AL.AL_ORIENTATION, sourceOri, 0);
     }
 
     public float[] getSourcePos() {
@@ -156,16 +176,29 @@ public class ALSource {
         LOG.info("AL source started,tid:" + Thread.currentThread().getId());
         while (flag != St.TERM) {
             processCmdStep();
-            if (flag == St.PLAYING) {
-                boolean fillSuccess = queue.refillProcessedBuffer();
-                if (!fillSuccess) {
-                    waitPlayingFinished();
-                    flag = St.STOPED;
-                }
-            }
+            playlogic();
             sleepQuietly(DEF_UPDATE_SEN);
         }
+        dodestroy();
         LOG.info("AL source stopped,tid:" + Thread.currentThread().getId());
+    }
+
+    private void playlogic() {
+        if (flag == St.PLAYING) {
+            boolean fillSuccess = queue.refillProcessedBuffer();
+            if (!isPlaying() || !fillSuccess) {
+                waitPlayingFinished();
+                flag = St.STOPED;
+            }
+        }
+    }
+
+    private void dodestroy() {
+        al.alSourceStop(getSource());
+        waitPlayingFinished();
+        queue.destroy();
+        al.alDeleteSources(1, source, 0);
+        alservice.check();
     }
 
     private void waitPlayingFinished() {
@@ -237,13 +270,6 @@ public class ALSource {
     }
 
     public void destroy() {
-        cmdQueue.offer(() -> {
-            al.alSourceStop(getSource());
-            waitPlayingFinished();
-            queue.destroy();
-            al.alDeleteSources(1, source, 0);
-            alservice.check();
-            flag = St.TERM;
-        });
+        cmdQueue.offer(() -> flag = St.TERM);
     }
 }

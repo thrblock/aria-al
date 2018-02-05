@@ -1,15 +1,14 @@
 package com.thrblock.aria.altest;
 
 import java.io.File;
-import java.io.IOException;
-
-import javax.sound.sampled.UnsupportedAudioFileException;
 
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import com.thrblock.aria.data.MusicData;
-import com.thrblock.aria.decoder.SPIDecoder;
+import com.thrblock.aria.data.DataFactory;
+import com.thrblock.aria.data.music.MusicData;
+import com.thrblock.aria.data.sound.SoundData;
+import com.thrblock.aria.sound.AriaSoundException;
 import com.thrblock.aria.source.ALSource;
 import com.thrblock.aria.source.ALSourceFactory;
 
@@ -20,14 +19,27 @@ public class TestWithSpringContext {
         context.registerShutdownHook();
     }
 
-    public static void main(String[] args) throws UnsupportedAudioFileException, IOException, InterruptedException {
+    public static void main(String[] args) throws AriaSoundException {
         ALSourceFactory sourceFactory = context.getBean(ALSourceFactory.class);
         ALSource source = sourceFactory.generateALSource();
-        MusicData music = new MusicData(new SPIDecoder(),new File("D:\\CloudMusic\\Andreas Waldetoft\\Stellaris Synthetic Dawn Soundtrack\\Andreas Waldetoft - Robo Sapiens.mp3"));
+        DataFactory dataFactory = context.getBean(DataFactory.class);
+        
+        SoundData sound = dataFactory.generateSoundData(new File("D:\\work\\GoldWave\\MusicWorkSpace\\sfx_point.wav"));
+        source.initData(sound.createLoopSource(5));
+        source.play();
+        
+        playMusic(source, dataFactory);
+    }
+
+    private static void playMusic(ALSource source, DataFactory dataFactory) throws AriaSoundException {
+        MusicData music = dataFactory.generateMusicData(new File(
+                "D:\\CloudMusic\\Andreas Waldetoft\\Stellaris Original Soundtrack\\Andreas Waldetoft,Mia Stegmar - Faster Than Light.mp3"));
         source.initData(music);
         source.play();
         source.pause();
         source.play();
         source.destroy();
     }
+    
+    
 }
